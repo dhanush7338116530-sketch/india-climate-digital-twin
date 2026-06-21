@@ -24,7 +24,7 @@ st.set_page_config(
 st.markdown("""
     <style>
     .main-header {
-        font-size: 3rem;
+        font-size: 2.5rem;
         color: #1f77b4;
         text-align: center;
         margin-bottom: 0;
@@ -41,11 +41,6 @@ st.markdown("""
         border-radius: 20px;
         font-size: 0.8rem;
         display: inline-block;
-    }
-    .stMetric {
-        background-color: #f0f2f6;
-        border-radius: 10px;
-        padding: 10px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -175,28 +170,47 @@ if month_df.empty:
     st.stop()
 
 # -------------------------------------------------
-# Key Metrics
+# Key Metrics - Simplified Version (FIXED)
 # -------------------------------------------------
-col1, col2, col3, col4, col5 = st.columns(5)
+st.markdown("### 📊 Rainfall Statistics")
+
+col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.metric("🌧️ Total Rainfall", f"{month_df['rainfall'].sum():.1f} mm")
+    total_rainfall = month_df['rainfall'].sum()
+    st.markdown(f"""
+    <div style='background-color:#f0f2f6; border-radius:10px; padding:15px; text-align:center;'>
+        <span style='font-size:1.2rem;'>🌧️ Total Rainfall</span><br>
+        <span style='font-size:2rem; font-weight:bold; color:#1f77b4;'>{total_rainfall:.1f} mm</span>
+    </div>
+    """, unsafe_allow_html=True)
+
 with col2:
-    st.metric("📊 Average", f"{month_df['rainfall'].mean():.2f} mm")
+    avg_rainfall = month_df['rainfall'].mean()
+    st.markdown(f"""
+    <div style='background-color:#f0f2f6; border-radius:10px; padding:15px; text-align:center;'>
+        <span style='font-size:1.2rem;'>📊 Average</span><br>
+        <span style='font-size:2rem; font-weight:bold; color:#2ca02c;'>{avg_rainfall:.2f} mm</span>
+    </div>
+    """, unsafe_allow_html=True)
+
 with col3:
-    st.metric("⬆️ Max", f"{month_df['rainfall'].max():.1f} mm")
+    max_rainfall = month_df['rainfall'].max()
+    st.markdown(f"""
+    <div style='background-color:#f0f2f6; border-radius:10px; padding:15px; text-align:center;'>
+        <span style='font-size:1.2rem;'>⬆️ Max</span><br>
+        <span style='font-size:2rem; font-weight:bold; color:#d62728;'>{max_rainfall:.1f} mm</span>
+    </div>
+    """, unsafe_allow_html=True)
+
 with col4:
-    st.metric("📍 Data Points", f"{len(month_df):,}")
-with col5:
-    # Year-over-year change (if data available)
-    prev_year_data = df_india[(df_india['year'] == selected_year - 1) & (df_india['month'] == selected_month)]
-    if not prev_year_data.empty:
-        prev_avg = prev_year_data['rainfall'].mean()
-        curr_avg = month_df['rainfall'].mean()
-        change = ((curr_avg - prev_avg) / prev_avg) * 100 if prev_avg > 0 else 0
-        st.metric("📈 YoY Change", f"{change:+.1f}%")
-    else:
-        st.metric("📈 YoY Change", "N/A")
+    data_points = len(month_df)
+    st.markdown(f"""
+    <div style='background-color:#f0f2f6; border-radius:10px; padding:15px; text-align:center;'>
+        <span style='font-size:1.2rem;'>📍 Data Points</span><br>
+        <span style='font-size:2rem; font-weight:bold; color:#9467bd;'>{data_points:,}</span>
+    </div>
+    """, unsafe_allow_html=True)
 
 # -------------------------------------------------
 # Map Visualization with Perfect India Focus
