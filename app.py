@@ -8,6 +8,7 @@ from streamlit_folium import st_folium
 from folium.plugins import HeatMap
 import os
 from datetime import datetime
+import time
 
 # -------------------------------------------------
 # Page configuration
@@ -129,6 +130,14 @@ max_year = int(available_years[-1])
 st.sidebar.success(f"✅ Loaded {len(df_india):,} data points from {min_year} to {max_year}")
 
 # -------------------------------------------------
+# Initialize session state for year
+# -------------------------------------------------
+if 'selected_year' not in st.session_state:
+    st.session_state.selected_year = min_year
+if 'auto_play_counter' not in st.session_state:
+    st.session_state.auto_play_counter = 0
+
+# -------------------------------------------------
 # Sidebar - Time Travel Controls
 # -------------------------------------------------
 st.sidebar.header("⏳ Time Travel Controls")
@@ -139,10 +148,15 @@ selected_year = st.sidebar.slider(
     "🎯 Select Year",
     min_value=min_year,
     max_value=max_year,
-    value=min_year,
+    value=st.session_state.selected_year,
     step=1,
     format="%d"
 )
+
+# Update session state when slider changes
+if selected_year != st.session_state.selected_year:
+    st.session_state.selected_year = selected_year
+    st.session_state.auto_play_counter = 0
 
 # Month selector
 months = ['January', 'February', 'March', 'April', 'May', 'June', 
@@ -150,15 +164,69 @@ months = ['January', 'February', 'March', 'April', 'May', 'June',
 selected_month_name = st.sidebar.selectbox("📅 Select Month", months)
 selected_month = months.index(selected_month_name) + 1
 
-# Auto-play option
-auto_play = st.sidebar.checkbox("▶️ Auto-play through years")
-
 # Display current time period
 st.sidebar.info(f"📊 Showing: **{selected_month_name} {selected_year}**")
 
 # Progress bar for time travel
 years_progress = (selected_year - min_year) / (max_year - min_year) if max_year > min_year else 0
 st.sidebar.progress(years_progress)
+
+# -------------------------------------------------
+# Navigation and Auto-play Controls
+# -------------------------------------------------
+st.sidebar.markdown("---")
+st.sidebar.subheader("🎮 Navigation")
+
+# Create navigation buttons
+col_nav1, col_nav2, col_nav3 = st.sidebar.columns([1, 1, 1])
+
+with col_nav1:
+    if st.button("⏮️ Prev", use_container_width=True):
+        if selected_year > min_year:
+            st.session_state.selected_year = selected_year - 1
+            st.session_state.auto_play_counter = 0
+            st.rerun()
+
+with col_nav2:
+    auto_play = st.checkbox("▶️ Auto-play", value=False)
+
+with col_nav3:
+    if st.button("⏭️ Next", use_container_width=True):
+        if selected_year < max_year:
+            st.session_state.selected_year = selected_year + 1
+            st.session_state.auto_play_counter = 0
+            st.rerun()
+
+# -------------------------------------------------
+# Auto-play Logic
+# -------------------------------------------------
+if auto_play:
+    # Check if we're at the end
+    if selected_year >= max_year:
+        st.sidebar.success("🎉 All years played!")
+        st.sidebar.info("Uncheck 'Auto-play' to restart")
+        st.session_state.auto_play_counter = 0
+    else:
+        # Increment counter
+        st.session_state.auto_play_counter += 1
+        
+        # Show progress
+        progress = (selected_year - min_year) / (max_year - min_year)
+        st.sidebar.progress(progress)
+        st.sidebar.info(f"🎬 Playing: {selected_year} → {selected_year + 1}")
+        
+        # Advance every 2 seconds (at 10 fps, this is about 20 frames)
+        if st.session_state.auto_play_counter >= 20:
+            next_year = selected_year + 1
+            st.session_state.selected_year = next_year
+            st.session_state.auto_play_counter = 0
+            st.rerun()
+        
+        # Small delay to control speed
+        time.sleep(0.1)
+else:
+    # Reset counter when auto-play is turned off
+    st.session_state.auto_play_counter = 0
 
 # -------------------------------------------------
 # Filter data for selected year and month
@@ -170,7 +238,7 @@ if month_df.empty:
     st.stop()
 
 # -------------------------------------------------
-# Key Metrics - Simplified Version (FIXED)
+# Key Metrics - Colorful Cards
 # -------------------------------------------------
 st.markdown("### 📊 Rainfall Statistics")
 
@@ -478,20 +546,6 @@ st.download_button(
 )
 
 # -------------------------------------------------
-# Auto-play Logic
-# -------------------------------------------------
-if auto_play:
-    if selected_year < max_year:
-        st.sidebar.info(f"⏳ Playing... Next year: {selected_year + 1}")
-        # Auto-advance using session state
-        if 'year' not in st.session_state:
-            st.session_state.year = selected_year
-        st.session_state.year = selected_year + 1
-        # Note: Streamlit will rerun with new year
-    else:
-        st.sidebar.success("🎉 Reached the end! Uncheck and recheck to restart.")
-
-# -------------------------------------------------
 # Footer
 # -------------------------------------------------
 st.markdown("---")
@@ -506,3 +560,4 @@ with col_footer3:
 
 st.caption("💡 Tip: Use the slider above to travel through time! Drag it to see climate patterns change.")
 st.caption("🗺️ Map shows rainfall intensity: Blue=Low, Cyan=Moderate, Yellow=High, Red=Very High")
+st.caption("🎮 Use the Prev/Next buttons or Auto-play to navigate through years automatically.")
